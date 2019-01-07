@@ -1,41 +1,7 @@
-var globalOptions = {
-  "instagram-feed" : {
-    imageWidth:1280,
-    imageHeight:1280,
-    kickerFontSize:32,
-    headlineFontSize:72,
-    authorsFontSize:36,
-    bottomMargin:256,
-    leftMargin:48,
-    rightMargin:48,
-    authorImageSize:96
-  },
-  "instagram-story" : {
-    imageWidth:1080,
-    imageHeight:1920,
-    kickerFontSize:28,
-    headlineFontSize:64,
-    authorsFontSize:28,
-    bottomMargin:456,
-    leftMargin:150,
-    rightMargin:150,
-    authorImageSize:96
-  },
-  "twitter-feed" : {
-    imageWidth:1080,
-    imageHeight:512,
-    kickerFontSize:24,
-    headlineFontSize:48,
-    authorsFontSize:24,
-    bottomMargin:128,
-    leftMargin:24,
-    rightMargin:400,
-    authorImageSize:96
-  }
-}
 
 
 function onload() {
+  /* Console welcome message*/
   console.log('%cHey !%c', 'color:rgb(255,30,30);font-weight:bold;font-size:32px;font-family:Helvetica');
   console.log('%cInterested in this little tool? Check out the source code !%c', 'color:rgb(30,30,145);font-size:16px;font-family:monospace');
   console.log('%cAnd feel free to improve it ! %c', 'color:rgb(30,30,145);font-size:16px;font-family:monospace');
@@ -43,13 +9,11 @@ function onload() {
 
 }
 
-
-function launchURL() {
-  generateImage();
-}
 function generateImage(){
-
-  /* Base information */
+  /*
+    Get article's information from url
+  */
+  /*default data*/
   var articleInfo = {
     title:"Write your custom title here",
     kicker:"kicker/section",
@@ -61,7 +25,7 @@ function generateImage(){
     authorThreeName:null,
     authorThreeThumbnail:null,
   };
-
+  /* get url from data */
   urlObj = document.getElementById('url');
   console.log('Retrieving info for : ', urlObj.value);
   articleInfo.url = urlObj.value;
@@ -104,7 +68,6 @@ function generateImage(){
 
             }
           }
-
           /* find info from <meta ... /> */
           var list = el.getElementsByTagName("meta");
           for (var i = 0; i < list.length; i++) {
@@ -145,7 +108,6 @@ function generateImage(){
               articleInfo.authorThreeThumbnail = list[i].getAttribute('content');
             }
           }
-          console.log(articleInfo);
           resolve(articleInfo);
         }
       ).fail(function(){
@@ -157,8 +119,11 @@ function generateImage(){
     }
   })
 
+  /*
+    Get user input from the UI
+  */
   articleDataPromise.then(function(value) {
-
+    /*default data*/
     var options = {
       width:640,
       height:640,
@@ -171,25 +136,20 @@ function generateImage(){
       customAuthorSource:'',
       customBackgroundImage:null
     }
-    /* Get options from UI */
+    /* options -> select */
     var formatType = document.getElementById('format').selectedOptions[0].getAttribute('value');
     options.format = formatType;
     options.width = globalOptions[options.format].imageWidth;
     options.height = globalOptions[options.format].imageHeight;
 
+    /* booleans -> checkboxes */
     var showAuthor = document.getElementById('showAuthor');
     options.showAuthor = showAuthor.checked;
     var showKicker = document.getElementById('showKicker');
     options.showKicker = showKicker.checked;
     var showWatermark = document.getElementById('showWatermark');
     options.showWatermark = showWatermark.checked;
-
-
-    var customBackgroundImage = document.getElementById('customBackgroundImage');
-    if (customBackgroundImage.value) {
-      options.customBackgroundImage= URL.createObjectURL(customBackgroundImage.files[0]);
-    }
-
+    /* text inputs -> input[type="text"] */
     var customHeadline = document.getElementById('customHeadline');
     options.customHeadline= customHeadline.value;
     var customKicker = document.getElementById('customKicker');
@@ -198,27 +158,34 @@ function generateImage(){
     options.customAuthorSource= customAuthorSource.value;
     var customAuthorName = document.getElementById('customAuthorName');
     options.customAuthorName= customAuthorName.value;
-
     var customHeadlineColor = document.getElementById('customHeadlineColor');
     options.customHeadlineColor= customHeadlineColor.value;
-
     var customHeadlineBackground = document.getElementById('customHeadlineBackground');
     options.customHeadlineBackground= customHeadlineBackground.value;
-
-    drawCanvases(articleInfo,options);
+    /* file inputs -> input[type="file"] */
+    var customBackgroundImage = document.getElementById('customBackgroundImage');
+    if (customBackgroundImage.value) {
+      options.customBackgroundImage= URL.createObjectURL(customBackgroundImage.files[0]);
+    }
+    /*
+      Draw the image on canvas
+    */
+    renderCanvas(articleInfo,options);
 
   });
 }
 
-function drawCanvases(articleInfo, opts) {
-  /* get all options, combine customised values and base config */
+
+
+function renderCanvas(articleInfo, opts) {
   var options = opts;
-  //for (var attrname in opts) { options[attrname] = opts[attrname]; }
-  /* Create canvas */
+
+  /* Empty element where canvas should be */
   var block = document.getElementById('canvas-block');
   block.innerHTML="";
+  /* Create canvas */
   var can1 = document.createElement('canvas');
-  can1.id = "smig-image";
+  can1.id = "neme-image";
   can1.width = options.width;
   can1.height = options.height;
   var ctx1 = can1.getContext("2d");
@@ -228,12 +195,11 @@ function drawCanvases(articleInfo, opts) {
 
   /* Draw a black background */
   ctx1.beginPath();
-  ctx1.fillStyle="#000000";
+  ctx1.fillStyle="#000000";/* TODO : add as an option?*/
   ctx1.rect(0,0,ctx1BaseWidth,ctx1BaseHeight);
   ctx1.fill();
   ctx1.closePath()
-
-  /* Find and draw background image - promise, to provide good async */
+  /* Find (or not) and draw background image */
   var backgroundImagePromise = new Promise(function(resolve, reject){
     var img = new Image();
     var timestamp = new Date().getTime(); /* hack around CORS permission issue */
@@ -257,7 +223,7 @@ function drawCanvases(articleInfo, opts) {
 
   backgroundImagePromise.then(function(value){
 
-    /* Draw watermark and text on Square */
+    /* Draw watermark/overlay */
     var overlayPromise = new Promise(function(resolve, reject){
       var overlay = new Image();
       var timestamp = new Date().getTime();
@@ -277,13 +243,13 @@ function drawCanvases(articleInfo, opts) {
         resolve(true);
       }
       overlay.onerror = function(e) {
-        console.warn('Could not load overlay image');
+        console.warn('Could not load watermark/overlay image');
         resolve(false);
       }
     })
     overlayPromise.then(function(wat){
-      /* Headline */
-      /* Check custom colours */
+      /* Draw Headline */
+      /* custom options */
       if (options.customHeadlineColor) {
         var headlineColor = options.customHeadlineColor
       } else {
@@ -299,7 +265,6 @@ function drawCanvases(articleInfo, opts) {
       } else {
         var headlineText = articleInfo.title;
       }
-      /* Prepare text */
       var headlineOptions = {
         fontSize:globalOptions[options.format].headlineFontSize,
         lineHeight:Math.round(globalOptions[options.format].headlineFontSize*1.2),
@@ -309,9 +274,7 @@ function drawCanvases(articleInfo, opts) {
         fillBackground:headlineBackground
       }
       var headlineDrawable = prepareText(ctx1, headlineText, headlineOptions);
-      /* Draw text */
       renderText(ctx1, headlineDrawable, {x:globalOptions[options.format].leftMargin, y:options.height-headlineDrawable.height-globalOptions[options.format].bottomMargin});
-
 
       /* Draw Kicker */
       if (options.showKicker) {
@@ -324,59 +287,60 @@ function drawCanvases(articleInfo, opts) {
       }
 
 
-      /* Render authors faces */
-      /* 1 */
+      /* Draw Author's faces (only for topolitique.ch articles); create author text (any article) */
       var authorsText = "";
       var authorsNum = 0;
-      if (articleInfo.authorOneName) {
-        var authorsText=authorsText+articleInfo.authorOneName;
-        if (options.showAuthor && articleInfo.authorOneThumbnail) {
-          authorsNum=1;
-          var au = new Image();
-          var timestamp = new Date().getTime();
-          au.src = articleInfo.authorOneThumbnail+ "?"+timestamp;
-          au.onload = function(e){
-            renderCircleImage(ctx1, this, {x:globalOptions[options.format].leftMargin,y:options.height-globalOptions[options.format].bottomMargin+14, size:globalOptions[options.format].authorImageSize})
-          }
-        }
-      } else {
-        authorsText = articleInfo.source.split('.')[0].toUpperCase();
-      }
-      if (articleInfo.authorTwoName) {
-        var authorsText=authorsText+", "+articleInfo.authorTwoName;
-        if (options.showAuthor && articleInfo.authorTwoThumbnail) {
-          authorsNum=2;
-          var au2 = new Image();
-          var timestamp = new Date().getTime();
-          au2.src = articleInfo.authorTwoThumbnail+ "?"+timestamp;
-          au2.onload = function(e){
-            renderCircleImage(ctx1, this, {x:globalOptions[options.format].leftMargin+(globalOptions[options.format].authorImageSize+14),y:options.height-globalOptions[options.format].bottomMargin+14, size:globalOptions[options.format].authorImageSize})
-          }
-        }
-      }
-      if (articleInfo.authorThreeName) {
-        var authorsText=authorsText+", "+articleInfo.authorThreeName;
-        if (options.showAuthor && articleInfo.authorThreeThumbnail) {
-          authorsNum=3;
-          var au2 = new Image();
-          var timestamp = new Date().getTime();
-          au2.src = articleInfo.authorThreeThumbnail+ "?"+timestamp;
-          au2.onload = function(e){
-            renderCircleImage(ctx1, this, {x:globalOptions[options.format].leftMargin+2*(globalOptions[options.format].authorImageSize+14),y:options.height-globalOptions[options.format].bottomMargin+14, size:globalOptions[options.format].authorImageSize})
-          }
-        }
-      }
-      /* custom option */
       if (options.customAuthorName) {
+        /* custom options */
         authorsText = options.customAuthorName;
+      } else {
+        if (articleInfo.authorOneName) {
+          var authorsText=authorsText+articleInfo.authorOneName;
+          if (options.showAuthor && articleInfo.authorOneThumbnail) {
+            authorsNum=1;
+            var au = new Image();
+            var timestamp = new Date().getTime();
+            au.src = articleInfo.authorOneThumbnail+ "?"+timestamp;
+            au.onload = function(e){
+              renderCircleImage(ctx1, this, {x:globalOptions[options.format].leftMargin,y:options.height-globalOptions[options.format].bottomMargin+14, size:globalOptions[options.format].authorImageSize})
+            }
+          }
+        } else {
+          authorsText = articleInfo.source.split('.')[0].toUpperCase();
+        }
+        if (articleInfo.authorTwoName) {
+          var authorsText=authorsText+", "+articleInfo.authorTwoName;
+          if (options.showAuthor && articleInfo.authorTwoThumbnail) {
+            authorsNum=2;
+            var au2 = new Image();
+            var timestamp = new Date().getTime();
+            au2.src = articleInfo.authorTwoThumbnail+ "?"+timestamp;
+            au2.onload = function(e){
+              renderCircleImage(ctx1, this, {x:globalOptions[options.format].leftMargin+(globalOptions[options.format].authorImageSize+14),y:options.height-globalOptions[options.format].bottomMargin+14, size:globalOptions[options.format].authorImageSize})
+            }
+          }
+        }
+        if (articleInfo.authorThreeName) {
+          var authorsText=authorsText+", "+articleInfo.authorThreeName;
+          if (options.showAuthor && articleInfo.authorThreeThumbnail) {
+            authorsNum=3;
+            var au2 = new Image();
+            var timestamp = new Date().getTime();
+            au2.src = articleInfo.authorThreeThumbnail+ "?"+timestamp;
+            au2.onload = function(e){
+              renderCircleImage(ctx1, this, {x:globalOptions[options.format].leftMargin+2*(globalOptions[options.format].authorImageSize+14),y:options.height-globalOptions[options.format].bottomMargin+14, size:globalOptions[options.format].authorImageSize})
+            }
+          }
+        }
       }
 
-      /* Show author's names and source */
+      /* set author's text margin, whether there are author's images or not. */
       if (options.showAuthor || authorsNum!=0) {
         var leftPos = globalOptions[options.format].leftMargin+(globalOptions[options.format].authorImageSize+14)*(authorsNum)+14;
       } else {
         var leftPos=globalOptions[options.format].leftMargin;
       }
+      /* Draw author text */
       var textWidth = options.width/3*2;
       var authorTextOptions = {
         fontSize:globalOptions[options.format].authorsFontSize,
@@ -388,20 +352,21 @@ function drawCanvases(articleInfo, opts) {
         fillForeground:'#ffffff',
         fillBackground:"rgba(30,30,30,0.2)"
       }
+      /* TODO : set options to style author text?*/
       var authorTextDrawable = prepareText(ctx1, authorsText, authorTextOptions);
       renderText(ctx1, authorTextDrawable, {x:leftPos, y:options.height-globalOptions[options.format].bottomMargin+14});
-
+      /* Draw source */
       if (options.customAuthorSource && options.customAuthorSource!='') {
-        var source = options.customAuthorSource;
+        /*custom option*/
+        var soOptions = customSourceOptions({background:options.customAuthorSourceBackground, text:options.customAuthorSource})
       } else if (articleInfo.source && articleInfo.source!='') {
-        var source = articleInfo.source;
+        var soOptions = getSourceOptions(articleInfo.source);
       } else {
-        var source = "topolitique.ch";
+        var soOptions = getSourceOptions('topolitique.ch');
       }
-      var topoDrawable = prepareText(ctx1, source, {fontSize:22, lineHeight:40, width:300, fontFamily:"IBM Plex Sans", fillBackground:"#C30E00",fillForeground:"#ffffff", roundedCorners:3});
+      /* TODO : set options to style source?*/
+      var topoDrawable = prepareText(ctx1, soOptions.text, {fontSize:22, lineHeight:40, width:300, fontFamily:"IBM Plex Sans", fillBackground:soOptions.background,fillForeground:soOptions.foreground, roundedCorners:3});
       renderText(ctx1, topoDrawable, {x:leftPos, y:options.height-globalOptions[options.format].bottomMargin+24+authorTextDrawable.height});
-
     }) /* after overlay is drawn */ ;
-
   }) /* after background is drawn */
 }

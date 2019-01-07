@@ -29,3 +29,4 @@ It also doesn't require any building, as it is HTML and JS to its most basic, me
 
 ## TODO : future
 * Look into animation
+* something to look at : https://schema.org/NewsArticle
