@@ -36,7 +36,11 @@ var globalOptions = {
 
 
 function onload() {
-  console.log('__Hi there__');
+  console.log('%cHey !%c', 'color:rgb(255,30,30);font-weight:bold;font-size:32px;font-family:Helvetica');
+  console.log('%cInterested in this little tool? Check out the source code !%c', 'color:rgb(30,30,145);font-size:16px;font-family:monospace');
+  console.log('%cAnd feel free to improve it ! %c', 'color:rgb(30,30,145);font-size:16px;font-family:monospace');
+  console.log('%chttp://github.com/the-duck/neme %c', 'color:rgb(30,30,145);font-size:16px;font-family:monospace');
+
 }
 
 
@@ -64,7 +68,7 @@ function generateImage(){
   articleInfo.source = articleInfo.url.replace('http://','').replace('https://','').replace('www.','').split('/')[0];
 
   var articleDataPromise = new Promise(function(resolve, reject) {
-    if (url) {
+    if (articleInfo.url) {
       var url = 'http://whateverorigin.org/get?url='+encodeURIComponent(articleInfo.url)+'&callback=?';/* workaround CORS permission issue */
       $.getJSON(
         url,
@@ -141,7 +145,8 @@ function generateImage(){
               articleInfo.authorThreeThumbnail = list[i].getAttribute('content');
             }
           }
-          resolve(true);
+          console.log(articleInfo);
+          resolve(articleInfo);
         }
       ).fail(function(){
         console.warn('Could not retrieve the articles information');
@@ -153,6 +158,7 @@ function generateImage(){
   })
 
   articleDataPromise.then(function(value) {
+
     var options = {
       width:640,
       height:640,
@@ -296,7 +302,7 @@ function drawCanvases(articleInfo, opts) {
       /* Prepare text */
       var headlineOptions = {
         fontSize:globalOptions[options.format].headlineFontSize,
-        lineHeight:Math.round(globalOptions[options.format].headlineFontSize*1.5),
+        lineHeight:Math.round(globalOptions[options.format].headlineFontSize*1.2),
         width:options.width-globalOptions[options.format].leftMargin-globalOptions[options.format].rightMargin,
         fontFamily:"IBM Plex Sans",
         fillForeground:headlineColor,
