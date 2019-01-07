@@ -18,10 +18,13 @@ function prepareText(ctx,text, opts) {
     roundedCorners:opts.roundedCorners || 0
   }
 
+  /* if no text */
+  if (! text) {
+    text = "no text..."
+  }
 
+  /* setup font */
   ctx.font = options.fontWeight+" " +  options.fontSize + "px " + options.fontFamily;
-
-
 
   var templine = '';
   var tempy = 0;
@@ -41,16 +44,15 @@ function prepareText(ctx,text, opts) {
         width:ctx.measureText(templine+' ').width
       });
       templine = words[n] + ' ';
-
     } else {
       templine = testLine;
-      if (n+1==words.length) {
-        lines.push({
-          text:templine,
-          y:tempy,
-          width:ctx.measureText(templine+' ').width
-        });
-      }
+    }
+    if (n+1==words.length) {
+      lines.push({
+        text:templine,
+        y:tempy,
+        width:ctx.measureText(templine+' ').width
+      });
     }
   }
 
@@ -85,17 +87,22 @@ function renderText(ctx, info, opts) {
     }
     ctx.fill();
     ctx.closePath();
+
     ctx.beginPath();
     ctx.font = options.fontWeight+" " +  options.fontSize + "px " + options.fontFamily;
+    var leftPadding = 7;
+    if (options.fontSize<33) {
+      leftPadding=4
+    }
     if (options.textShadow) {
         ctx.shadowColor = "rgba(0,0,0,0.2)"; /* TODO : add this option */
-        ctx.shadowOffsetX = -3;
-        ctx.shadowOffsetY = 3;
+        ctx.shadowOffsetX = -leftPadding/2;
+        ctx.shadowOffsetY = leftPadding/2;
         ctx.shadowBlur = 0;
     }
     ctx.fillStyle=options.fillForeground;
     //var verticalPadding = (options.lineHeight-options.fontSize)/2;
-    ctx.fillText(line.text, options.x+7, options.y+line.y+options.lineHeight/2);
+    ctx.fillText(line.text, options.x+leftPadding, options.y+line.y+options.lineHeight/2);
     ctx.shadowColor = "transparent";
     ctx.textBaseline = 'top';
     ctx.closePath();
@@ -113,15 +120,27 @@ function renderBackgroundImage(ctx, image, opts) {
   var imHeight = 0;
   var imWidth = 0;
   var ratio = options.imageWidth/options.imageHeight;
-  if ( (options.imageWidth<options.width || options.imageHeight<options.height) && ratio<1) {
-    //height is bigger
-    var imHeight = options.height;
-    var imWidth = options.height*ratio;
+  if (options.imageWidth<options.width && options.imageHeight>options.height) {
+    var imWidth = options.width;
+    var imHeight = options.width/ratio;
     ctx.drawImage(image, (imWidth-options.width) / -2 , 0, imWidth, imHeight );
-  } else if ( (options.imageWidth<options.width || options.imageHeight<options.height) && ratio>=1) {
+  } else if (options.imageHeight<options.height && options.imageWidth>options.width) {
     var imHeight = options.height
     var imWidth = options.height*ratio;;
     ctx.drawImage(image, (imWidth-options.width) / -2 , 0, imWidth, imHeight );
+  } else if (options.imageHeight<options.height && options.imageWidth<options.width) {
+    /* calculate if height or width is better*/
+    var he = options.height-options.imageHeight;
+    var wi = options.width-options.imageWidth;
+    if (he>wi) {
+      var imHeight = options.height
+      var imWidth = options.height*ratio;;
+    } else {
+      var imWidth = options.width;
+      var imHeight = options.width/ratio;
+    }
+    ctx.drawImage(image, (imWidth-options.width) / -2 , 0, imWidth, imHeight );
+
   } else {
     var imWidth=options.imageWidth;
     var imHeight=options.imageHeight;

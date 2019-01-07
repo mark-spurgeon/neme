@@ -3,7 +3,7 @@ News Meme generator
 
 This is a simple meme generator for articles published from [topolitque.ch](http://www.topolitique.ch) destined for sharing them on various social media platforms. It is inspired from Vox's [meme project](https://github.com/voxmedia/meme), however this tool doesn't generate an image from a link, and lacks some options specific to news articles. Also, the code from vox's repo is outdated.
 
-See it in action here : [http://topolitique.ch/neme/](http://topolitique.ch/neme/)
+> Unfortunately, due to restrictions with CORS, only a few news sources work, such as bbc news and the guardian (no image, but the rest works). I'd be happy to get some help on how to overcome these (obviously, only with client-side javascript). Still, you can see it in action here : [http://topolitique.ch/neme/](http://topolitique.ch/neme/)
 
 ![neme image](https://github.com/the-duck/neme/raw/master/screenshot.png)
 
@@ -18,14 +18,14 @@ It also doesn't require any building, as it is HTML and JS to its most basic, me
 * Enable support for options (functions should also take into account the options) √
 * Draw one image rather than all, thus skimming duplicate code √
 * Implement Twitter and Facebook images (right now only insta stories and feed) ~√
-* Make it more general (less focused on *TOPO*), compatible with most articles
-* Fix issue when no image is found -> freezes the process, essentially due to the asynchronous nature of JS and the impossibility of finding a good solution to not write hundreds of lines of code that do the same thing.
-* Find out about multiple authors standard with `meta` tags, or other, and about author's profile image.
+* Make it more general (less focused on *TOPO*), compatible with most articles ~√ (in theory compatible, though mostly not the case, du to CORS permission issues)
+* Fix issue when no image is found -> freezes the process, essentially due to the asynchronous nature of JS and the impossibility of finding a good solution to not write hundreds of lines of code that do the same thing. √ (fixed with Promises)
+* Find out about multiple authors standard with `meta` tags, or other, and about author's profile image. ~√ (implemented '<a rel="author">')
 * Add more options, perhaps a system where all options can be copy/pasted in one go.
-  - custom background image
+  - custom background image √
   - source text colour
   - author text colour
-  - custom watermark/overlay image
+  - custom watermark/overlay image √
 
 ## TODO : future
 * Look into animation
