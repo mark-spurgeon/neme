@@ -23,7 +23,7 @@ body {
   display: flex;
   flex-direction: row;
   align-items: stretch;
-  align-content: stretch; /* Extra space in Cross Axis */
+  align-content: stretch;
   overflow: auto;
 }
 .left {

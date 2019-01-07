@@ -34,9 +34,11 @@ function generateImage(){
   var articleDataPromise = new Promise(function(resolve, reject) {
     if (articleInfo.url) {
       var url = 'http://whateverorigin.org/get?url='+encodeURIComponent(articleInfo.url)+'&callback=?';/* workaround CORS permission issue */
+      //url = articleInfo.url;
       $.getJSON(
         url,
         function(data) {
+          console.log(data);
           var el = document.createElement( 'html' );
           el.innerHTML = data.contents;
 
@@ -171,7 +173,6 @@ function generateImage(){
       Draw the image on canvas
     */
     renderCanvas(articleInfo,options);
-
   });
 }
 
@@ -203,14 +204,6 @@ function renderCanvas(articleInfo, opts) {
   var backgroundImagePromise = new Promise(function(resolve, reject){
     var img = new Image();
     var timestamp = new Date().getTime(); /* hack around CORS permission issue */
-    if (articleInfo.image && !options.customBackgroundImage) {
-      img.src = articleInfo.image + '?' + timestamp;
-    } else if (options.customBackgroundImage) {
-      img.src = options.customBackgroundImage;
-    } else {
-      console.warn('Couldnt find an image');
-      img.src = "http://topolitique.ch/neme/style/bg.png" + '?' + timestamp;
-    }
     img.onload = function(event) {
       renderBackgroundImage(ctx1, this, {width:options.width, height:options.height});
       resolve(true);
@@ -218,6 +211,14 @@ function renderCanvas(articleInfo, opts) {
     img.onerror = function(event) {
       console.warn('The image we found is not suitable (probably a CORS issue)');
       resolve(false); /* continue the process */
+    };
+    if (articleInfo.image && !options.customBackgroundImage) {
+      img.src = articleInfo.image;
+    } else if (options.customBackgroundImage) {
+      img.src = options.customBackgroundImage;
+    } else {
+      console.warn('Couldnt find an image');
+      img.src = "http://topolitique.ch/neme/style/bg.png" + '?' + timestamp;
     }
   });
 
