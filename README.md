@@ -7,15 +7,7 @@ This is a simple meme generator for articles published from [topolitque.ch](http
 
 ![neme image](https://github.com/the-duck/neme/raw/master/screenshot.png)
 
-## The code
-
-It is implemented solely on html5 and js, thus saving the cost of running a server side image-editing system as all the computing is done on the client side, while keeping the advantages of the web : easy usage by anyone, and continuous updates on the code.
-
-It also doesn't require any building, as it is HTML and JS to its most basic, meaning that it is easily hackable. Feel free to steal functions that might be useful if you need to draw things like text and rounded images on canvas in the `js/functions.js` file.
-
-
 ## Websites that work with News Meme Generator
-
 * [topolitique.ch](http://www.topolitique.ch)
 * [theguardian.com](https://theguardian.com)
 * [bbc.com](https://bbc.com)
@@ -27,6 +19,12 @@ It also doesn't require any building, as it is HTML and JS to its most basic, me
 
 ![examples](https://github.com/the-duck/neme/raw/master/wallpaper.png)
 
+
+## The code
+
+It is implemented solely on html5 and js, thus saving the cost of running a server side image-editing system as all the computing is done on the client side, while keeping the advantages of the web : easy usage by anyone, and continuous updates on the code.
+
+It also doesn't require any building, as it is HTML and JS to its most basic, meaning that it is easily hackable. Feel free to steal functions that might be useful if you need to draw things like text and rounded images on canvas in the `js/functions.js` file.
 
 ##  TODO - Version 2 (planned 30/01/2019):
 * Change text drawing functions (prepare text, then draw, to know the size it takes) √
