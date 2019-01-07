@@ -15,7 +15,7 @@ function generateImage(){
   */
   /*default data*/
   var articleInfo = {
-    title:"Write your custom title here",
+    title:"Write your custom title there 👈",
     kicker:"kicker/section",
     source:"unknown source",
     authorOneName:null,
@@ -35,10 +35,15 @@ function generateImage(){
     if (articleInfo.url) {
       var url = 'http://whateverorigin.org/get?url='+encodeURIComponent(articleInfo.url)+'&callback=?';/* workaround CORS permission issue */
       //url = articleInfo.url;
-      $.getJSON(
-        url,
-        function(data) {
-          console.log(data);
+      $.ajax({
+        url: url,
+        dataType: 'json',
+        timeout:3000,
+        error: function(e) {
+          console.warn('Could not retrieve the articles information');
+          resolve(false);
+        },
+        success: function(data) {
           var el = document.createElement( 'html' );
           el.innerHTML = data.contents;
 
@@ -112,10 +117,7 @@ function generateImage(){
           }
           resolve(articleInfo);
         }
-      ).fail(function(){
-        console.warn('Could not retrieve the articles information');
-        resolve(false);
-      })
+      });
     } else { 
       resolve(false);
     }
@@ -306,8 +308,6 @@ function renderCanvas(articleInfo, opts) {
               renderCircleImage(ctx1, this, {x:globalOptions[options.format].leftMargin,y:options.height-globalOptions[options.format].bottomMargin+14, size:globalOptions[options.format].authorImageSize})
             }
           }
-        } else {
-          authorsText = articleInfo.source.split('.')[0].toUpperCase();
         }
         if (articleInfo.authorTwoName) {
           var authorsText=authorsText+", "+articleInfo.authorTwoName;
@@ -336,26 +336,35 @@ function renderCanvas(articleInfo, opts) {
       }
 
       /* set author's text margin, whether there are author's images or not. */
-      if (options.showAuthor || authorsNum!=0) {
+      if (options.showAuthor) {
         var leftPos = globalOptions[options.format].leftMargin+(globalOptions[options.format].authorImageSize+14)*(authorsNum)+14;
       } else {
-        var leftPos=globalOptions[options.format].leftMargin;
+        var leftPos=globalOptions[options.format].leftMargin+4;
+      }
+      if (authorsNum==0) {
+        var leftPos=globalOptions[options.format].leftMargin+4;
       }
       /* Draw author text */
-      var textWidth = options.width/3*2;
-      var authorTextOptions = {
-        fontSize:globalOptions[options.format].authorsFontSize,
-        lineHeight:Math.round(globalOptions[options.format].authorsFontSize*1.5),
-        width:textWidth,
-        fontFamily:"IBM Plex Sans",
-        fontWeight:'normal',
-        textShadow:false,
-        fillForeground:'#ffffff',
-        fillBackground:"rgba(30,30,30,0.2)"
+      if (authorsText) {
+        var textWidth = options.width/3*2;
+        var authorTextOptions = {
+          fontSize:globalOptions[options.format].authorsFontSize,
+          lineHeight:Math.round(globalOptions[options.format].authorsFontSize*1.5),
+          width:textWidth,
+          fontFamily:"IBM Plex Sans",
+          fontWeight:'normal',
+          textShadow:false,
+          fillForeground:'#ffffff',
+          fillBackground:"rgba(30,30,30,0.2)"
+        }
+        /* TODO : set options to style author text?*/
+        var authorTextDrawable = prepareText(ctx1, authorsText, authorTextOptions);
+        renderText(ctx1, authorTextDrawable, {x:leftPos, y:options.height-globalOptions[options.format].bottomMargin+14});
+        var sourceTopMargin = authorTextDrawable.height;
+      } else {
+        var sourceTopMargin = 0;
+
       }
-      /* TODO : set options to style author text?*/
-      var authorTextDrawable = prepareText(ctx1, authorsText, authorTextOptions);
-      renderText(ctx1, authorTextDrawable, {x:leftPos, y:options.height-globalOptions[options.format].bottomMargin+14});
       /* Draw source */
       if (options.customAuthorSource && options.customAuthorSource!='') {
         /*custom option*/
@@ -367,7 +376,7 @@ function renderCanvas(articleInfo, opts) {
       }
       /* TODO : set options to style source?*/
       var topoDrawable = prepareText(ctx1, soOptions.text, {fontSize:22, lineHeight:40, width:300, fontFamily:"IBM Plex Sans", fillBackground:soOptions.background,fillForeground:soOptions.foreground, roundedCorners:3});
-      renderText(ctx1, topoDrawable, {x:leftPos, y:options.height-globalOptions[options.format].bottomMargin+24+authorTextDrawable.height});
+      renderText(ctx1, topoDrawable, {x:leftPos, y:options.height-globalOptions[options.format].bottomMargin+24+sourceTopMargin});
     }) /* after overlay is drawn */ ;
   }) /* after background is drawn */
 }

@@ -55,6 +55,16 @@ var sourceOptions = {
     foreground:"#ffffff",
     text:"BBC"
   },
+  "rts.ch" : {
+    background:"red",
+    foreground:"#ffffff",
+    text:"RTS News"
+  },
+  "courrierinternational.com" : {
+    background:"#FFEB00",
+    foreground:"#000000",
+    text:"Courrier International"
+  }
 }
 
 
@@ -64,9 +74,16 @@ function getSourceOptions(source)  {
   try {
     var s_options = sourceOptions.default;
     for (var attrname in sourceOptions[source]) { s_options[attrname] = sourceOptions[source][attrname]; }
-
+    if (source && !sourceOptions[source].text) {
+      s_options.text = source
+    }
   } catch (e) {
-    var s_options = sourceOptions.default
+    /* not sure it ever gets to there */
+    console.log('What a suprise! Theres an unexpected error there.');
+    var s_options = sourceOptions.default;
+    if (source) {
+      s_options.text = source
+    }
   }
   return s_options;
 }
