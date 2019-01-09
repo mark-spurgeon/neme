@@ -146,10 +146,16 @@ function renderBackgroundImage(ctx, image, opts) {
       var imHeight = options.width/ratio;
     }
     ctx.drawImage(image, (imWidth-options.width) / -2 , 0, imWidth, imHeight );
-
   } else {
     var imWidth=options.imageWidth;
     var imHeight=options.imageHeight;
+    if (options.imageWidth<options.imageHeight) {
+      imWidth=options.height*ratio;
+      imHeight=options.height;
+    } else if (options.imageWidth>options.imageHeight){
+      imWidth=options.width;
+      imHeight=options.width/ratio;
+    }
     ctx.drawImage(image, (imWidth-options.width) / -2, (imHeight-options.height) / -2 );
   }
 }
