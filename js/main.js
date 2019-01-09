@@ -6,18 +6,43 @@ function onload() {
   console.log('%cInterested in this little tool? Check out the source code !%c', 'color:rgb(30,30,145);font-size:16px;font-family:monospace');
   console.log('%cAnd feel free to improve it ! %c', 'color:rgb(30,30,145);font-size:16px;font-family:monospace');
   console.log('%chttp://github.com/the-duck/neme %c', 'color:rgb(30,30,145);font-size:16px;font-family:monospace');
-
 }
 
+/*
+  Main process : (1) get info from article, (2) get user inputs, (3) draw
+*/
 function generateImage(){
+  getArticleInfo().then(function(articleInfo) {
+    var options = getOptions(articleInfo);
+    renderCanvas(options)
+  })
+}
+
+function file_get_contents_curl($url)
+{
+    $ch = curl_init();
+
+    curl_setopt($ch, CURLOPT_HEADER, 0);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+    curl_setopt($ch, CURLOPT_URL, $url);
+    curl_setopt($ch, CURLOPT_FOLLOWLOCATION, 1);
+
+    $data = curl_exec($ch);
+    curl_close($ch);
+
+    return $data;
+}
+
+function getArticleInfo(){
   /*
     Get article's information from url
   */
   /*default data*/
   var articleInfo = {
-    title:"Write your custom title there 👈",
-    kicker:"kicker/section",
-    source:"unknown source",
+    headline:"Write your custom headline there 👈",
+    backroundImage:null,
+    kicker:null,
+    source:null,
     authorOneName:null,
     authorOneThumbnail:null,
     authorTwoName:null,
@@ -27,13 +52,20 @@ function generateImage(){
   };
   /* get url from data */
   urlObj = document.getElementById('url');
-  console.log('Retrieving info for : ', urlObj.value);
   articleInfo.url = urlObj.value;
-  articleInfo.source = articleInfo.url.replace('http://','').replace('https://','').replace('www.','').split('/')[0];
+  articleInfo.source = getSourceFromUrl(articleInfo.url);
 
   var articleDataPromise = new Promise(function(resolve, reject) {
     if (articleInfo.url) {
-      var url = 'http://whateverorigin.org/get?url='+encodeURIComponent(articleInfo.url)+'&callback=?';/* workaround CORS permission issue */
+      console.log('Retrieving info for : ', urlObj.value);
+      var url = getWhateverOriginUrl(articleInfo.url);/* workaround CORS permission issue */
+
+      var iframeElement = document.getElementById('iframe');
+      iframeElement.src=articleInfo.url;
+      iframeElement.onload=function() {
+        console.log('loaded');
+      }
+
       //url = articleInfo.url;
       $.ajax({
         url: url,
@@ -79,13 +111,13 @@ function generateImage(){
           var list = el.getElementsByTagName("meta");
           for (var i = 0; i < list.length; i++) {
             if (list[i].getAttribute('property')==="og:title") {
-              articleInfo.title = list[i].getAttribute('content');
+              articleInfo.headline = list[i].getAttribute('content');
             }
             if (list[i].getAttribute('property')==="og:description") {
               articleInfo.description = list[i].getAttribute('content');
             }
             if (list[i].getAttribute('property')==="og:image") {
-              articleInfo.image = list[i].getAttribute('content');
+              articleInfo.backgroundImage = list[i].getAttribute('content');
             }
             if (list[i].getAttribute('property')==="article:kicker") {
               articleInfo.kicker = list[i].getAttribute('content');
@@ -119,70 +151,89 @@ function generateImage(){
         }
       });
     } else { 
-      resolve(false);
+      console.log("Continuing without an article input");
+      resolve(articleInfo);
     }
   })
 
   /*
     Get user input from the UI
   */
-  articleDataPromise.then(function(value) {
-    /*default data*/
-    var options = {
-      width:640,
-      height:640,
-      showKicker:true,
-      showAuthor:true,
-      showWatermark:true,
-      showLogo:false,
-      customHeadline:'',
-      customKicker:'',
-      customAuthorSource:'',
-      customBackgroundImage:null
-    }
-    /* options -> select */
-    var formatType = document.getElementById('format').selectedOptions[0].getAttribute('value');
-    options.format = formatType;
-    options.width = globalOptions[options.format].imageWidth;
-    options.height = globalOptions[options.format].imageHeight;
-
-    /* booleans -> checkboxes */
-    var showAuthor = document.getElementById('showAuthor');
-    options.showAuthor = showAuthor.checked;
-    var showKicker = document.getElementById('showKicker');
-    options.showKicker = showKicker.checked;
-    var showWatermark = document.getElementById('showWatermark');
-    options.showWatermark = showWatermark.checked;
-    /* text inputs -> input[type="text"] */
-    var customHeadline = document.getElementById('customHeadline');
-    options.customHeadline= customHeadline.value;
-    var customKicker = document.getElementById('customKicker');
-    options.customKicker= customKicker.value;
-    var customAuthorSource = document.getElementById('customAuthorSource');
-    options.customAuthorSource= customAuthorSource.value;
-    var customAuthorName = document.getElementById('customAuthorName');
-    options.customAuthorName= customAuthorName.value;
-    var customHeadlineColor = document.getElementById('customHeadlineColor');
-    options.customHeadlineColor= customHeadlineColor.value;
-    var customHeadlineBackground = document.getElementById('customHeadlineBackground');
-    options.customHeadlineBackground= customHeadlineBackground.value;
-    /* file inputs -> input[type="file"] */
-    var customBackgroundImage = document.getElementById('customBackgroundImage');
-    if (customBackgroundImage.value) {
-      options.customBackgroundImage= URL.createObjectURL(customBackgroundImage.files[0]);
-    }
-    /*
-      Draw the image on canvas
-    */
-    renderCanvas(articleInfo,options);
-  });
+  /*articleDataPromise.then(function(value) {
+    getOptions(value)
+  });*/
+  return articleDataPromise;
 }
 
+function getOptions(articleInfo) {
+  /*default data*/
+  var options = Object.assign(articleInfo, {
+    width:640,
+    height:640,
+    showKicker:true,
+    showAuthor:true,
+    showWatermark:true,
+    showLogo:false,
+    authorSource:null,
+  });
+  /* options -> select */
+  var formatType = document.getElementById('format').selectedOptions[0].getAttribute('value');
+  options.format = formatType;
+  options.width = globalOptions[options.format].imageWidth;
+  options.height = globalOptions[options.format].imageHeight;
+  /* booleans -> checkboxes */
+  var showAuthor = document.getElementById('showAuthor');
+  options.showAuthor = showAuthor.checked;
+  var showKicker = document.getElementById('showKicker');
+  options.showKicker = showKicker.checked;
+  var showWatermark = document.getElementById('showWatermark');
+  options.showWatermark = showWatermark.checked;
 
+  /* text inputs -> input[type="text"] */
+  var customHeadline = document.getElementById('customHeadline');
+  if (customHeadline.value!=''){
+    options.headline= customHeadline.value;
+  } else {
+    customHeadline.value=options.headline;
+  }
+  var customKicker = document.getElementById('customKicker');
+  if (customKicker.value!=''){
+    options.kicker= customKicker.value;
+  }
+  var customSource = document.getElementById('customSource');
+  if (customSource.value!=''){
+    options.source= customSource.value;
+  } else {
+    customSource.value=options.source;
+  }
+  var customAuthorName = document.getElementById('customAuthorName');
+  if (customAuthorName.value!=''){
+    options.authorName= customAuthorName.value;
+  }
+  var customHeadlineColor = document.getElementById('customHeadlineColor');
+  if (customHeadlineColor.value!=''){
+    options.headlineColor= customHeadlineColor.value;
+  }
+  var customHeadlineBackground = document.getElementById('customHeadlineBackground');
+  if (customHeadlineBackground.value!=''){
+    options.headlineBackgroundColor= customHeadlineBackground.value;
+  }
+  /* file inputs -> input[type="file"] */
+  var customBackgroundImage = document.getElementById('customBackgroundImage');
+  if (customBackgroundImage.value) {
+    options.backgroundImage= URL.createObjectURL(customBackgroundImage.files[0]);
+  }
 
-function renderCanvas(articleInfo, opts) {
-  var options = opts;
+  return options;
 
+  /* set articleInfo in options */
+  /*
+    Draw the image on canvas
+  */
+  /*renderCanvas(articleInfo,options);*/
+}
+
+function renderCanvas(options) {
   /* Empty element where canvas should be */
   var block = document.getElementById('canvas-block');
   block.innerHTML="";
@@ -192,14 +243,12 @@ function renderCanvas(articleInfo, opts) {
   can1.width = options.width;
   can1.height = options.height;
   var ctx1 = can1.getContext("2d");
-  var ctx1BaseHeight = options.height;
-  var ctx1BaseWidth = options.width;
   block.appendChild(can1);
 
   /* Draw a black background */
   ctx1.beginPath();
   ctx1.fillStyle="#000000";/* TODO : add as an option?*/
-  ctx1.rect(0,0,ctx1BaseWidth,ctx1BaseHeight);
+  ctx1.rect(0,0,options.width,options.height);
   ctx1.fill();
   ctx1.closePath()
   /* Find (or not) and draw background image */
@@ -214,10 +263,8 @@ function renderCanvas(articleInfo, opts) {
       console.warn('The image we found is not suitable (probably a CORS issue)');
       resolve(false); /* continue the process */
     };
-    if (articleInfo.image && !options.customBackgroundImage) {
-      img.src = articleInfo.image;
-    } else if (options.customBackgroundImage) {
-      img.src = options.customBackgroundImage;
+    if (options.backgroundImage) {
+      img.src = options.backgroundImage;
     } else {
       console.warn('Couldnt find an image');
       img.src = "http://topolitique.ch/neme/style/bg.png" + '?' + timestamp;
@@ -225,8 +272,8 @@ function renderCanvas(articleInfo, opts) {
   });
 
   backgroundImagePromise.then(function(value){
-
     /* Draw watermark/overlay */
+    /* TODO : find cleaner way of including overlay image + add custom overlay image option*/
     var overlayPromise = new Promise(function(resolve, reject){
       var overlay = new Image();
       var timestamp = new Date().getTime();
@@ -253,20 +300,15 @@ function renderCanvas(articleInfo, opts) {
     overlayPromise.then(function(wat){
       /* Draw Headline */
       /* custom options */
-      if (options.customHeadlineColor) {
-        var headlineColor = options.customHeadlineColor
+      if (options.headlineColor) {
+        var headlineColor = options.headlineColor
       } else {
         var headlineColor = "#ffffff"
       }
-      if (options.customHeadlineBackground) {
-        var headlineBackground = options.customHeadlineBackground
+      if (options.headlineBackgroundColor) {
+        var headlineBackground = options.headlineBackgroundColor
       } else {
         var headlineBackground = "transparent"
-      }
-      if (options.customHeadline && options.customHeadline!='') {
-        var headlineText = options.customHeadline
-      } else {
-        var headlineText = articleInfo.title;
       }
       var headlineOptions = {
         fontSize:globalOptions[options.format].headlineFontSize,
@@ -274,60 +316,61 @@ function renderCanvas(articleInfo, opts) {
         width:options.width-globalOptions[options.format].leftMargin-globalOptions[options.format].rightMargin,
         fontFamily:"IBM Plex Sans",
         fillForeground:headlineColor,
-        fillBackground:headlineBackground
+        fillBackground:headlineBackground,
+        lineMargin:globalOptions[options.format].headlineLineMargin,
+        roundedCorners:globalOptions[options.format].headlineRoundedCorders
       }
-      var headlineDrawable = prepareText(ctx1, headlineText, headlineOptions);
+      var headlineDrawable = prepareText(ctx1, options.headline, headlineOptions);
       renderText(ctx1, headlineDrawable, {x:globalOptions[options.format].leftMargin, y:options.height-headlineDrawable.height-globalOptions[options.format].bottomMargin});
 
       /* Draw Kicker */
       if (options.showKicker) {
-        var kickText = articleInfo.kicker;
-        if (options.customKicker && options.customKicker!='') {
-          kickText=options.customKicker;
+        if (options.kicker) {
+          var kickerDrawable = prepareText(ctx1, options.kicker, {fontSize:globalOptions[options.format].kickerFontSize,lineHeight:Math.round(globalOptions[options.format].kickerFontSize*1.5),width:options.width-globalOptions[options.format].rightMargin,fontFamily:"IBM Plex Sans",fillForeground:"#1e1e1e",fillBackground:"#ffffff", roundedCorners:4});
+          renderText(ctx1, kickerDrawable, {x:globalOptions[options.format].leftMargin+globalOptions[options.format].headlineFontSize/8, y:options.height-headlineDrawable.height-kickerDrawable.height-globalOptions[options.format].bottomMargin-10});
         }
-        var kickerDrawable = prepareText(ctx1, kickText, {fontSize:globalOptions[options.format].kickerFontSize,lineHeight:Math.round(globalOptions[options.format].kickerFontSize*1.5),width:options.width-globalOptions[options.format].rightMargin,fontFamily:"IBM Plex Sans",fillForeground:"#ffffff",fillBackground:"#C30E00", roundedCorners:2});
-        renderText(ctx1, kickerDrawable, {x:globalOptions[options.format].leftMargin+4, y:options.height-headlineDrawable.height-kickerDrawable.height-globalOptions[options.format].bottomMargin-10});
       }
 
 
       /* Draw Author's faces (only for topolitique.ch articles); create author text (any article) */
       var authorsText = "";
       var authorsNum = 0;
-      if (options.customAuthorName) {
+      if (options.authorName) {
         /* custom options */
-        authorsText = options.customAuthorName;
+        authorsText = options.authorName;
       } else {
-        if (articleInfo.authorOneName) {
-          var authorsText=authorsText+articleInfo.authorOneName;
-          if (options.showAuthor && articleInfo.authorOneThumbnail) {
+        /*this system is not great*/
+        if (options.authorOneName) {
+          var authorsText=authorsText+options.authorOneName;
+          if (options.showAuthor && options.authorOneThumbnail) {
             authorsNum=1;
             var au = new Image();
             var timestamp = new Date().getTime();
-            au.src = articleInfo.authorOneThumbnail+ "?"+timestamp;
+            au.src = options.authorOneThumbnail+ "?"+timestamp;
             au.onload = function(e){
               renderCircleImage(ctx1, this, {x:globalOptions[options.format].leftMargin,y:options.height-globalOptions[options.format].bottomMargin+14, size:globalOptions[options.format].authorImageSize})
             }
           }
         }
-        if (articleInfo.authorTwoName) {
-          var authorsText=authorsText+", "+articleInfo.authorTwoName;
-          if (options.showAuthor && articleInfo.authorTwoThumbnail) {
+        if (options.authorTwoName) {
+          var authorsText=authorsText+", "+options.authorTwoName;
+          if (options.showAuthor && options.authorTwoThumbnail) {
             authorsNum=2;
             var au2 = new Image();
             var timestamp = new Date().getTime();
-            au2.src = articleInfo.authorTwoThumbnail+ "?"+timestamp;
+            au2.src = options.authorTwoThumbnail+ "?"+timestamp;
             au2.onload = function(e){
               renderCircleImage(ctx1, this, {x:globalOptions[options.format].leftMargin+(globalOptions[options.format].authorImageSize+14),y:options.height-globalOptions[options.format].bottomMargin+14, size:globalOptions[options.format].authorImageSize})
             }
           }
         }
-        if (articleInfo.authorThreeName) {
-          var authorsText=authorsText+", "+articleInfo.authorThreeName;
-          if (options.showAuthor && articleInfo.authorThreeThumbnail) {
+        if (options.authorThreeName) {
+          var authorsText=authorsText+", "+options.authorThreeName;
+          if (options.showAuthor && options.authorThreeThumbnail) {
             authorsNum=3;
             var au2 = new Image();
             var timestamp = new Date().getTime();
-            au2.src = articleInfo.authorThreeThumbnail+ "?"+timestamp;
+            au2.src = options.authorThreeThumbnail+ "?"+timestamp;
             au2.onload = function(e){
               renderCircleImage(ctx1, this, {x:globalOptions[options.format].leftMargin+2*(globalOptions[options.format].authorImageSize+14),y:options.height-globalOptions[options.format].bottomMargin+14, size:globalOptions[options.format].authorImageSize})
             }
@@ -339,10 +382,10 @@ function renderCanvas(articleInfo, opts) {
       if (options.showAuthor) {
         var leftPos = globalOptions[options.format].leftMargin+(globalOptions[options.format].authorImageSize+14)*(authorsNum)+14;
       } else {
-        var leftPos=globalOptions[options.format].leftMargin+4;
+        var leftPos=globalOptions[options.format].leftMargin+globalOptions[options.format].headlineFontSize/4;
       }
       if (authorsNum==0) {
-        var leftPos=globalOptions[options.format].leftMargin+4;
+        var leftPos=globalOptions[options.format].leftMargin+globalOptions[options.format].headlineFontSize/4;
       }
       /* Draw author text */
       if (authorsText) {
@@ -355,28 +398,32 @@ function renderCanvas(articleInfo, opts) {
           fontWeight:'normal',
           textShadow:false,
           fillForeground:'#ffffff',
-          fillBackground:"rgba(30,30,30,0.2)"
+          fillBackground:"rgba(30,30,30,0.1)",
+          roundedCorners:4,
+          textMargin:3
         }
         /* TODO : set options to style author text?*/
         var authorTextDrawable = prepareText(ctx1, authorsText, authorTextOptions);
-        renderText(ctx1, authorTextDrawable, {x:leftPos, y:options.height-globalOptions[options.format].bottomMargin+14});
+        renderText(ctx1, authorTextDrawable, {x:leftPos, y:options.height-globalOptions[options.format].bottomMargin+10});
         var sourceTopMargin = authorTextDrawable.height;
       } else {
         var sourceTopMargin = 0;
+      }
 
+      if (options.source) {
+        var soOptions = getSourceOptions(options.source);
+        /* TODO : set options to style source?*/
+        var sourceDrawable = prepareText(ctx1, soOptions.text, {fontSize:20, lineHeight:30, width:300, fontFamily:"IBM Plex Sans", fillBackground:soOptions.background,fillForeground:soOptions.foreground, roundedCorners:3});
+        renderText(ctx1, sourceDrawable, {x:leftPos, y:options.height-globalOptions[options.format].bottomMargin+15+sourceTopMargin});
       }
-      /* Draw source */
-      if (options.customAuthorSource && options.customAuthorSource!='') {
-        /*custom option*/
-        var soOptions = customSourceOptions({background:options.customAuthorSourceBackground, text:options.customAuthorSource})
-      } else if (articleInfo.source && articleInfo.source!='') {
-        var soOptions = getSourceOptions(articleInfo.source);
-      } else {
-        var soOptions = getSourceOptions('topolitique.ch');
-      }
-      /* TODO : set options to style source?*/
-      var topoDrawable = prepareText(ctx1, soOptions.text, {fontSize:22, lineHeight:40, width:300, fontFamily:"IBM Plex Sans", fillBackground:soOptions.background,fillForeground:soOptions.foreground, roundedCorners:3});
-      renderText(ctx1, topoDrawable, {x:leftPos, y:options.height-globalOptions[options.format].bottomMargin+24+sourceTopMargin});
     }) /* after overlay is drawn */ ;
   }) /* after background is drawn */
+}
+
+
+function getSourceFromUrl(url) {
+  return url.replace('http://','').replace('https://','').replace('www.','').split('/')[0];
+}
+function getWhateverOriginUrl(url){
+  return 'http://whateverorigin.org/get?url='+encodeURIComponent(url)+'&callback=?';
 }

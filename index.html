@@ -38,8 +38,8 @@
         <div class="importance 1">
           <h2>Link </h2>
           <div class="box">
-            <p>Copy the article from <i>topolitique.ch</i>, or other, here 👇 </p>
-            <input type="text" id="url" name="url" />
+            <p>Copy and paste the article link in here (though it works without a link too) 👇 </p>
+            <input type="text" id="url" name="url" placeholder="Welcome to the hotel caalifornia. Such a lovely place, such a lovely face." />
           </div>
           <div class="box">
             <p>Choose the best suited format for your image</p>
@@ -48,13 +48,20 @@
               <option value="instagram-feed" default>Instagram Square (1280x1280px)</option>
               <option value="instagram-story">Instagram Story (1080x1920px)</option>
               <option value="twitter-feed">Twitter Feed (1024x512px)</option>
+              <option value="facebook-feed">Facebook Feed (1200x630px)</option>
+
             </select>
           </div>
 
         </div>
         <div class="importance two">
           <h2>Background image 📰 </h2>
-          <input type="file" id="customBackgroundImage" name="customBackgroundImage" accept="image/png, image/jpeg">
+          <div class="box">
+            <input type="checkbox" id="showWatermark" name="showWatermark" checked><label for="showWatermark"> Show the watermark</label></br>
+          </div>
+          <div class="box">
+            <input type="file" id="customBackgroundImage" name="customBackgroundImage" accept="image/png, image/jpeg" >
+          </div>
         </div>
         <div class="importance two">
           <h2>Kicker 👟 </h2>
@@ -63,7 +70,7 @@
 
           </div>
           <div class="box">
-            Set the <i>kicker's</i> text : <input type="text" id="customKicker" name="customKicker" placeholder="Breaking news" />
+            Set the <i>kicker's</i> text : <input type="text" id="customKicker" name="customKicker" placeholder="Looking for some hot stuff baby this eeeveniing" />
           </div>
         </div>
 
@@ -81,14 +88,12 @@
           <h2>Author 👩‍⚖️ </h2>
           <div class="box">
             <input type="checkbox" id="showAuthor" name="showAuthor" checked><label for="showAuthor"> Show the author's face</label></br>
-            <input type="checkbox" id="showWatermark" name="showWatermark" checked><label for="showWatermark"> Show the watermark</label></br>
-
           </div>
           <div class="box">
-            Custom author:
-            <input type="text" id="customAuthorName" name="customAuthorName" placeholder="default: topolitique.ch" />
-            Custom source:
-            <input type="text" id="customAuthorSource" name="customAuthorSource" placeholder="default: topolitique.ch" />
+            Set new author:
+            <input type="text" id="customAuthorName" name="customAuthorName" placeholder="That's me in the corneer. That's me in the spot. light. losing my religion" />
+            Set new source:
+            <input type="text" id="customSource" name="customSource" placeholder="Gimme Gimme Gimme a maaan after midniight" />
           </div>
         </div>
         <div class="importance two" style="padding-top:12px">
@@ -108,6 +113,8 @@
           <p style="padding-top:0px;padding-left:128px;padding-right:128px;text-align:center;font-size:10pt">Check out the source code at <a target="_blank" href="https://github.com/the-duck/neme">https://github.com/the-duck/neme</a> <p>
 
         </div>
+        <iframe src="" width="200" height="200" id="iframe"></iframe>
+
       </div>
     </div>
   </body>

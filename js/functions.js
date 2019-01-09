@@ -9,15 +9,16 @@ function prepareText(ctx,text, opts) {
   options = {
     width:opts.width||10,
     lineHeight:opts.lineHeight||64,
+    lineMargin:opts.lineMargin||0,
     fontSize:opts.fontSize||48,
     fontFamily:opts.fontFamily||'Helvetica',
     fontWeight:opts.fontWeight||'bold',
     textShadow:opts.textShadow||true,
+    textMargin:opts.textMargin||null,
     fillBackground: opts.fillBackground || '#ffffff',
     fillForeground: opts.fillForeground || '#000000',
     roundedCorners:opts.roundedCorners || 0
   }
-
   /* if no text */
   if (! text) {
     text = "no text..."
@@ -56,9 +57,11 @@ function prepareText(ctx,text, opts) {
     }
   }
 
+  for (var i = 0; i < lines.length; i++) {
+    lines[i].y = lines[i].y+(i*options.lineMargin)
+  }
 
-  height = lines.length*options.lineHeight;
-
+  height = lines.length*options.lineHeight+options.lineMargin*(lines.length-1);
 
   return {
     lines:lines,
@@ -71,8 +74,7 @@ function prepareText(ctx,text, opts) {
 
 
 
-function renderText(ctx, info, opts) {
-  var options = opts;
+function renderText(ctx, info, options) {
   for (var attrname in info.options) { options[attrname] = info.options[attrname]; }
   for (var i = 0; i < info.lines.length; i++) {
     ctx.beginPath();
@@ -81,7 +83,7 @@ function renderText(ctx, info, opts) {
     ctx.textBaseline = 'middle';
     ctx.fillStyle=options.fillBackground;
     if (options.roundedCorners) {
-      renderRoundRect(ctx, options.x, options.y+line.y,line.width,options.lineHeight, options.roundedCorner);
+      renderRoundRect(ctx, options.x, options.y+line.y,line.width,options.lineHeight, options.roundedCorners);
     } else {
       ctx.rect(options.x,options.y+line.y,line.width,options.lineHeight);
     }
@@ -90,14 +92,18 @@ function renderText(ctx, info, opts) {
 
     ctx.beginPath();
     ctx.font = options.fontWeight+" " +  options.fontSize + "px " + options.fontFamily;
-    var leftPadding = 7;
-    if (options.fontSize<33) {
-      leftPadding=4
+
+    var leftPadding = options.fontSize/4;
+    if (options.textMargin) {
+      leftPadding = options.textMargin;
     }
+    /*if (options.fontSize<33) {
+      leftPadding=4
+    }*/
     if (options.textShadow) {
         ctx.shadowColor = "rgba(0,0,0,0.2)"; /* TODO : add this option */
-        ctx.shadowOffsetX = -leftPadding/2;
-        ctx.shadowOffsetY = leftPadding/2;
+        ctx.shadowOffsetX = -leftPadding/4;
+        ctx.shadowOffsetY = leftPadding/4;
         ctx.shadowBlur = 0;
     }
     ctx.fillStyle=options.fillForeground;
