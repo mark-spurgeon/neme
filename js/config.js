@@ -58,12 +58,12 @@ var globalOptions = {
   "youtube-thumbnail" : {
     imageWidth:1280,
     imageHeight:720,
-    kickerFontSize:48,
+    kickerFontSize:36,
     headlineFontSize:80,
     headlineLineMargin:6,
     headlineRoundedCorders:8,
     authorsFontSize:24,
-    bottomMargin:64,
+    bottomMargin:116,
     leftMargin:48,
     rightMargin:100,
     authorImageSize:96,
@@ -83,7 +83,7 @@ var sourceOptions = {
     text:"Topolitique"
   },
   "theguardian.com": { /*this source works, at least...*/
-    background:"blue", /* TODO : find proper colour*/
+    background:"#4054B2", /* TODO : find proper colour*/
     foreground:"#ffffff",
     text:"The Guardian"
   },
